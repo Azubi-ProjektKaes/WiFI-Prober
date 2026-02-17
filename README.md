@@ -56,9 +56,13 @@ Möglicherweise muss es auch so expliziet eingestellt werden:
 
 bash
 sudo nmcli con add type wifi ifname wlan0 con-name "MeinWLAN" ssid "DEIN-NETZWERKNAME"
+
 sudo nmcli con modify "MeinWLAN" wifi-sec.key-mgmt wpa-psk
+
 sudo nmcli con modify "MeinWLAN" wifi-sec.psk "DEIN-PASSWORT"
+
 sudo nmcli con modify "MeinWLAN" wifi.hidden yes
+
 sudo nmcli con up "MeinWLAN"
 
 Methode 2: Über wpa_supplicant (Legacy/Headless)
