@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Probing Station</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --sidebar-bg: #1f2937;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-secondary: #6b7280;
+            --accent-primary: #3b82f6; /* Blue */
+            --accent-success: #10b981; /* Green */
+            --accent-danger: #ef4444; /* Red */
+            --accent-warning: #f59e0b; /* Orange */
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body.dark-mode {
+            --bg-color: #111827;
+            --sidebar-bg: #000000;
+            --card-bg: #1f2937;
+            --text-main: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0; 
+            transition: background-color 0.3s, color 0.3s; 
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Header Area */
+        .header {
+            background: var(--card-bg);
+            padding: 20px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .title-area h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .last-update { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; background-color: var(--accent-success); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        /* Controls */
+        .controls { display: flex; gap: 10px; align-items: center; }
+        
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary { background-color: var(--accent-primary); color: white; }
+        .btn-primary:hover { background-color: #2563eb; }
+        
+        .btn-secondary { background-color: transparent; border-color: var(--border-color); color: var(--text-main); }
+        .btn-secondary:hover { background-color: var(--bg-color); }
+        
+        .btn-icon { padding: 10px; border-radius: 8px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; }
+        .btn-icon:hover { background-color: var(--bg-color); }
+
+        /* System Monitor Pills */
+        .sys-mon {
+            display: flex;
+            gap: 12px;
+            background: var(--bg-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .sys-item { display: flex; flex-direction: column; align-items: flex-end; }
+        .sys-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+        .sys-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .full-width { grid-column: 1 / -1; }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card-header { margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 1rem; font-weight: 600; color: var(--text-secondary); margin: 0; }
+        
+        .metric-value { font-size: 2.5rem; font-weight: 700; color: var(--text-main); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
+        .metric-unit { font-size: 1rem; color: var(--text-secondary); font-weight: 400; margin-left: 4px; }
+        .metric-label { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Ping Specific */
+        .ping-container { display: flex; gap: 20px; justify-content: space-between; }
+        .ping-item { flex: 1; text-align: center; padding: 10px; background: var(--bg-color); border-radius: 8px; }
+        .ping-val { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .ping-target { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; }
+
+        /* Charts */
+        .chart-wrapper { height: 320px; width: 100%; position: relative; }
+
+        /* Table */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { text-align: left; padding: 12px 16px; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-color); background-color: var(--bg-color); }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-main); font-family: 'JetBrains Mono', monospace; }
+        tr:last-child td { border-bottom: none; }
+        
+        .ssid-col { font-family: 'Inter', sans-serif; font-weight: 600; }
+
+        /* Utility */
+        .text-success { color: var(--accent-success); }
+        .text-danger { color: var(--accent-danger); }
+        .text-warning { color: var(--accent-warning); }
+
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    
+    <!-- Top Bar -->
+    <div class="header">
+        <div class="title-area">
+            <h1>WiFi Probing Station</h1>
+            <div class="last-update">
+                <span class="status-dot"></span>
+                <span id="last-updated">Initialisiere...</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="sys-mon">
+                <div class="sys-item">
+                    <span class="sys-label">CPU</span>
+                    <span class="sys-value"><span id="sys-cpu">--</span>%</span>
+                </div>
+                <div class="sys-item">
+                    <span class="sys-label">RAM</span>
+                    <span class="sys-value"><span id="sys-ram">--</span>%</span>
+                </div>
+                <div class="sys-item">
+                    <span class="sys-label">TEMP</span>
+                    <span class="sys-value"><span id="sys-temp">--</span>°C</span>
+                </div>
+            </div>
+
+            <button class="btn btn-icon" onclick="toggleDarkMode()" title="Dark Mode">
+                🌙
+            </button>
+            
+            <button class="btn btn-secondary" onclick="forceRefresh()">
+                🔄 Refresh
+            </button>
+
+            <button id="btn-scan" class="btn btn-primary" onclick="triggerScan()">
+                📡 Scan Starten
+            </button>
+        </div>
+    </div>
+
+    <!-- Metrics Row -->
+    <div class="dashboard-grid">
+        <!-- Ping Card -->
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Live Latenz</h3></div>
+            <div class="ping-container">
+                <div class="ping-item">
+                    <div class="ping-target">Google (8.8.8.8)</div>
+                    <div class="ping-val" id="ping-google">--</div>
+                </div>
+                <div class="ping-item">
+                    <div class="ping-target">Cloudflare (1.1.1.1)</div>
+                    <div class="ping-val" id="ping-cloudflare">--</div>
+                </div>
+            </div>
+            <div class="metric-label" style="text-align: center; margin-top: 10px;">Echtzeit</div>
+        </div>
+
+        <!-- Speed Card -->
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Download Speed</h3></div>
+            <div>
+                <span class="metric-value" id="stat-speed">--</span>
+                <span class="metric-unit">Mbps</span>
+            </div>
+            <div class="metric-label">Durchschnitt (letzte 24h)</div>
+        </div>
+
+        <!-- Networks Card -->
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">WLAN Umgebung</h3></div>
+            <div>
+                <span class="metric-value" id="stat-wifi">--</span>
+                <span class="metric-unit">Netzwerke</span>
+            </div>
+            <div class="metric-label">Durchschnittlich sichtbar</div>
+        </div>
+
+        <!-- Probes Count -->
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Messungen</h3></div>
+            <div>
+                <span class="metric-value" id="stat-probes">--</span>
+                <span class="metric-unit">Datensätze</span>
+            </div>
+            <div class="metric-label">Gesammelt in 24h</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="dashboard-grid">
+        <!-- Latenz Chart (Volle Breite) -->
+        <div class="card full-width">
+            <div class="card-header"><h3 class="card-title">Latenz-Verlauf (24h)</h3></div>
+            <div class="chart-wrapper">
+                <canvas id="pingChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Speed Chart (Volle Breite) -->
+        <div class="card full-width">
+            <div class="card-header"><h3 class="card-title">Internet Geschwindigkeit (24h)</h3></div>
+            <div class="chart-wrapper">
+                <canvas id="speedChart"></canvas>
+            </div>
+        </div>
+
+        <!-- WiFi Chart (Volle Breite) -->
+        <div class="card full-width">
+            <div class="card-header"><h3 class="card-title">Sichtbare Netzwerke (24h)</h3></div>
+            <div class="chart-wrapper">
+                <canvas id="wifiChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Row -->
+    <div class="card full-width">
+        <div class="card-header"><h3 class="card-title">Gefundene Netzwerke (Details)</h3></div>
+        <div class="table-responsive">
+            <table id="networks-table">
+                <thead>
+                    <tr>
+                        <th>SSID</th>
+                        <th>Verschlüsselung</th>
+                        <th>Signal (dBm)</th>
+                        <th>Zuletzt gesehen</th>
+                        <th>Häufigkeit</th>
+                    </tr>
+                </thead>
+                <tbody id="networks-body">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Lade Daten...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Dashboard v2.1 Loaded");
+    
+    // Konfiguration
+    const PING_INTERVAL = 1000;
+    const STATS_INTERVAL = 30000;
+    const CHART_INTERVAL = 30000;
+
+    let speedChart = null;
+    let wifiChart = null;
+    let pingChart = null;
+
+    // --- Dark Mode ---
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark);
+        updateCharts(); // Charts neu zeichnen für Farbwechsel
+    }
+    window.toggleDarkMode = toggleDarkMode;
+
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+
+    function getChartColors() {
+        const isDark = document.body.classList.contains('dark-mode');
+        return {
+            grid: isDark ? '#374151' : '#e5e7eb',
+            text: isDark ? '#9ca3af' : '#6b7280'
+        };
+    }
+
+    // --- Actions ---
+    function triggerScan() {
+        const btn = document.getElementById('btn-scan');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "⏳ Scan...";
+        
+        fetch('/api/scan/trigger', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                checkScanStatus(btn, originalText);
+            })
+            .catch(e => {
+                alert("Fehler: " + e);
+                btn.disabled = false;
+                btn.innerText = originalText;
+            });
+    }
+    window.triggerScan = triggerScan;
+
+    function checkScanStatus(btn, originalText) {
+        const interval = setInterval(() => {
+            fetch('/api/scan/status')
+                .then(r => r.json())
+                .then(data => {
+                    if(!data.scanning) {
+                        clearInterval(interval);
+                        btn.disabled = false;
+                        btn.innerText = originalText;
+                        forceRefresh();
+                    }
+                });
+        }, 2000);
+    }
+
+    function forceRefresh() {
+        const btn = document.querySelector('.btn-secondary');
+        btn.classList.add('spin'); 
+        updateStats();
+        updateCharts();
+        setTimeout(() => btn.classList.remove('spin'), 1000);
+    }
+    window.forceRefresh = forceRefresh;
+
+    // --- Data Updates ---
+    function updateLive() {
+        fetch('/api/ping_multi')
+            .then(r => r.json())
+            .then(data => {
+                if(data.ping) {
+                    updatePingValue('ping-google', data.ping.google);
+                    updatePingValue('ping-cloudflare', data.ping.cloudflare);
+                }
+                if(data.system) {
+                    document.getElementById('sys-cpu').innerText = data.system.cpu;
+                    document.getElementById('sys-ram').innerText = data.system.ram;
+                    document.getElementById('sys-temp').innerText = data.system.temp;
+                    
+                    const tempElem = document.getElementById('sys-temp');
+                    if(data.system.temp > 75) tempElem.style.color = 'var(--accent-danger)';
+                    else tempElem.style.color = 'var(--text-main)';
+                }
+                document.getElementById('last-updated').innerText = 'Online • ' + new Date().toLocaleTimeString();
+            })
+            .catch(e => console.error('Live Update Error:', e));
+    }
+
+    function updatePingValue(id, data) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        
+        if(data && data.success) {
+            el.innerText = data.avg_ms.toFixed(1) + 'ms';
+            if(data.avg_ms < 50) el.className = 'ping-val text-success';
+            else if(data.avg_ms < 150) el.className = 'ping-val text-warning';
+            else el.className = 'ping-val text-danger';
+        } else {
+            el.innerText = 'TIMEOUT';
+            el.className = 'ping-val text-danger';
+        }
+    }
+
+    function updateStats() {
+        fetch('/api/stats')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('stat-probes').innerText = data.probes_24h || '0';
+                document.getElementById('stat-wifi').innerText = data.avg_wifi_networks || '0';
+                document.getElementById('stat-speed').innerText = data.avg_download_speed || '0';
+            });
+
+        fetch('/api/networks')
+            .then(r => r.json())
+            .then(data => {
+                const tbody = document.getElementById('networks-body');
+                if(data.networks && data.networks.length > 0) {
+                    tbody.innerHTML = '';
+                    // Sortieren nach Signalstärke (stärkste zuerst)
+                    data.networks.sort((a, b) => b.max_signal - a.max_signal);
+                    
+                    data.networks.forEach(net => {
+                        let signalColor = 'text-danger';
+                        if(net.max_signal > -60) signalColor = 'text-success';
+                        else if(net.max_signal > -80) signalColor = 'text-warning';
+
+                        tbody.innerHTML += `<tr>
+                                <td class="ssid-col">${net.ssid}</td>
+                                <td><span style="background:var(--bg-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${net.encryption}</span></td>
+                                <td class="${signalColor}">${net.max_signal} dBm</td>
+                                <td>${new Date(net.last_seen).toLocaleString()}</td>
+                                <td>${net.count}x</td>
+                            </tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Keine Netzwerke gefunden</td></tr>';
+                }
+            });
+    }
+
+    function updateCharts() {
+        const colors = getChartColors();
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { grid: { color: colors.grid, display: false }, ticks: { color: colors.text } },
+                y: { beginAtZero: true, grid: { color: colors.grid, borderDash: [5, 5] }, ticks: { color: colors.text } }
+            },
+            plugins: {
+                legend: { labels: { color: colors.text, usePointStyle: true, boxWidth: 8 } },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: true
+                }
+            },
+            elements: {
+                line: { tension: 0.4, borderWidth: 2 },
+                point: { radius: 0, hitRadius: 10, hoverRadius: 4 }
+            }
+        };
+
+        // Speed Chart
+        fetch('/api/chart/speedtest/24')
+            .then(r => r.json())
+            .then(data => {
+                const ctx = document.getElementById('speedChart').getContext('2d');
+                if(speedChart) speedChart.destroy();
+
+                speedChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.timestamps.map(t => new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})),
+                        datasets: [
+                            {
+                                label: 'Download',
+                                data: data.downloads,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true
+                            },
+                            {
+                                label: 'Upload',
+                                data: data.uploads,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: commonOptions
+                });
+            });
+
+        // WiFi Chart
+        fetch('/api/chart/wifi/24')
+            .then(r => r.json())
+            .then(data => {
+                const ctx = document.getElementById('wifiChart').getContext('2d');
+                if(wifiChart) wifiChart.destroy();
+
+                wifiChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.timestamps.map(t => new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})),
+                        datasets: [{
+                            label: 'Netzwerke',
+                            data: data.network_counts,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: commonOptions
+                });
+            });
+
+        // Ping Chart
+        fetch('/api/chart/ping/24')
+            .then(r => r.json())
+            .then(data => {
+                const ctx = document.getElementById('pingChart').getContext('2d');
+                if(pingChart) pingChart.destroy();
+                
+                const pingOpts = JSON.parse(JSON.stringify(commonOptions));
+                pingOpts.scales.y.title = { display: true, text: 'ms', color: colors.text };
+
+                pingChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.timestamps.map(t => new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})),
+                        datasets: [
+                            {
+                                label: 'Google',
+                                data: data.google,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'Cloudflare',
+                                data: data.cloudflare,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+				fill: true,
+                                spanGaps: true
+                            }
+                        ]
+                    },
+                    options: pingOpts
+                });
+            });
+    }
+
+    // Init
+    updateLive();
+    setInterval(updateLive, PING_INTERVAL);
+
+    updateStats();
+    setInterval(updateStats, STATS_INTERVAL);
+
+    updateCharts();
+    setInterval(updateCharts, CHART_INTERVAL);
+});
+</script>
+</body>
+</html>
