@@ -32,7 +32,7 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 5px; /* Etwas weniger Abstand für die Info-Zeile */
+            margin-bottom: 5px;
             color: var(--accent);
         }
 
@@ -47,7 +47,7 @@
 
         /* --- NEU: Incident Banner Styles --- */
         .incident-banner {
-            display: none; /* Standardmäßig aus */
+            display: none;
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 8px;
@@ -59,7 +59,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .incident-banner.warning {
-            background-color: #ffb74d; /* Orange/Gelb */
+            background-color: #ffb74d;
             color: #5d4037;
         }
         .incident-banner.critical {
@@ -122,68 +122,32 @@
         .status-ok { background-color: rgba(3, 218, 198, 0.2); color: var(--success); }
         .status-bad { background-color: rgba(207, 102, 121, 0.2); color: var(--error); }
 
-        /* Tabelle für Netzwerke */
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid var(--grid-line);
-        }
-        th {
-            color: var(--text-muted);
-        }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--grid-line); }
+        th { color: var(--text-muted); }
 
-        /* Charts Container */
-        .chart-container {
-            position: relative;
-            height: 250px;
-            width: 100%;
-        }
+        .chart-container { position: relative; height: 250px; width: 100%; }
 
-        /* Scan Button */
         .scan-btn {
-            background-color: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-            margin-top: 10px;
+            background-color: var(--accent); color: #fff; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 10px;
             transition: background-color 0.2s;
         }
         .scan-btn:hover { background-color: #9f67e0; }
         .scan-btn:disabled { background-color: var(--grid-line); cursor: not-allowed; }
 
-        /* Loading Spinner Overlay */
         #loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center;
+            align-items: center; flex-direction: column;
         }
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid var(--accent);
-            width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            border: 4px solid rgba(255,255,255,0.3); border-radius: 50%;
+            border-top: 4px solid var(--accent); width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
     </style>
 </head>
 <body>
@@ -202,9 +166,7 @@
             <div id="incident-details" class="incident-details">...</div>
         </div>
 
-        <!-- Grid Layout -->
         <div class="grid">
-            <!-- Karte 1: Live Ping & System -->
             <div class="card">
                 <h2>Live Status</h2>
                 <div class="metric-row">
@@ -230,7 +192,6 @@
                 </div>
             </div>
 
-            <!-- Karte 2: 24h Übersicht -->
             <div class="card">
                 <h2>Statistik (24h)</h2>
                 <div class="metric-row">
@@ -253,52 +214,36 @@
             </div>
         </div>
 
-        <!-- Charts Grid -->
         <div class="grid">
             <div class="card">
                 <h2>Internet Speed (24h)</h2>
-                <div class="chart-container">
-                    <canvas id="chartSpeed"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="chartSpeed"></canvas></div>
             </div>
             <div class="card">
                 <h2>Ping Latenz (24h)</h2>
-                <div class="chart-container">
-                    <canvas id="chartPing"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="chartPing"></canvas></div>
             </div>
         </div>
 
-        <!-- WLAN Liste -->
         <div class="card">
             <h2>Gefundene Netzwerke (24h)</h2>
             <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>SSID</th>
-                            <th>Max Signal</th>
-                            <th>Verschlüsselung</th>
-                            <th>Gesehen</th>
-                            <th>Zuletzt</th>
-                        </tr>
+                        <tr><th>SSID</th><th>Max Signal</th><th>Verschlüsselung</th><th>Gesehen</th><th>Zuletzt</th></tr>
                     </thead>
-                    <tbody id="wifi-table-body">
-                        <!-- Wird per JS gefüllt -->
-                    </tbody>
+                    <tbody id="wifi-table-body"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <div style="color: white; font-weight: bold;">Scan läuft... Bitte warten (ca. 60s)</div>
     </div>
 
     <script>
-        // Charts Konfiguration
         Chart.defaults.color = '#a0a0a0';
         Chart.defaults.borderColor = '#333';
         
@@ -306,31 +251,23 @@
         const chartPingCtx = document.getElementById('chartPing').getContext('2d');
         
         let chartSpeed = new Chart(chartSpeedCtx, {
-            type: 'line',
-            data: { labels: [], datasets: [] },
+            type: 'line', data: { labels: [], datasets: [] },
             options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
         });
 
         let chartPing = new Chart(chartPingCtx, {
-            type: 'line',
-            data: { labels: [], datasets: [] },
+            type: 'line', data: { labels: [], datasets: [] },
             options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
         });
 
-        // Formatierung Helfer
         function formatDate(isoString) {
             if(!isoString) return "-";
-            const d = new Date(isoString);
-            return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            return new Date(isoString).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
-
         function formatFullDate(isoString) {
             if(!isoString) return "-";
-            const d = new Date(isoString);
-            return d.toLocaleString([], {day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit'});
+            return new Date(isoString).toLocaleString([], {day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit'});
         }
-
-        // --- UPDATE FUNKTIONEN ---
 
         async function updateLive() {
             try {
@@ -347,20 +284,14 @@
                 const banner = document.getElementById('incident-banner');
                 if (data.incident && data.incident.active) {
                     banner.style.display = 'block';
-                    
-                    // Klasse je nach Schweregrad
                     banner.classList.remove('warning', 'critical');
                     banner.classList.add(data.incident.severity || 'critical');
-                    
-                    // Texte setzen
                     document.getElementById('incident-title').innerText = "⚠️ Ausfall: " + (data.incident.type || "Unbekannt");
-                    document.getElementById('incident-details').innerText = 
-                        "Seit: " + formatFullDate(data.incident.since) + " — " + (data.incident.message || "");
+                    document.getElementById('incident-details').innerText = "Seit: " + formatFullDate(data.incident.since) + " — " + (data.incident.message || "");
                 } else {
                     banner.style.display = 'none';
                 }
 
-                // Ping Google
                 const pg = data.ping.google;
                 const elPg = document.getElementById('ping-google');
                 if (pg.success) {
@@ -371,7 +302,6 @@
                     elPg.className = "status-badge status-bad";
                 }
 
-                // Ping Cloudflare
                 const pc = data.ping.cloudflare;
                 const elPc = document.getElementById('ping-cloudflare');
                 if (pc.success) {
@@ -382,28 +312,22 @@
                     elPc.className = "status-badge status-bad";
                 }
 
-                // System Stats
                 document.getElementById('sys-cpu').innerText = data.system.cpu.toFixed(0) + "%";
                 document.getElementById('sys-ram').innerText = data.system.ram.toFixed(0) + "%";
                 document.getElementById('sys-temp').innerText = data.system.temp.toFixed(1) + "°C";
 
-            } catch (e) {
-                console.error("Live update error:", e);
-            }
+            } catch (e) { console.error("Live update error:", e); }
         }
 
         async function updateStats() {
             try {
                 const res = await fetch('/api/stats');
                 const data = await res.json();
-                
                 if (Object.keys(data).length === 0) return;
-
                 document.getElementById('stat-probes').innerText = data.probes_24h;
                 document.getElementById('stat-avg-wifi').innerText = data.avg_wifi_networks;
                 document.getElementById('stat-avg-speed').innerText = data.avg_download_speed + " Mbps";
                 document.getElementById('stat-last').innerText = formatFullDate(data.last_probe);
-
             } catch (e) { console.error("Stats error:", e); }
         }
 
@@ -413,66 +337,34 @@
                 const data = await res.json();
                 const tbody = document.getElementById('wifi-table-body');
                 tbody.innerHTML = '';
-
                 data.networks.sort((a,b) => b.max_signal - a.max_signal);
-
                 data.networks.forEach(net => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${net.ssid}</strong></td>
-                        <td>${net.max_signal} dBm</td>
-                        <td>${net.encryption}</td>
-                        <td>${net.count}x</td>
-                        <td>${formatDate(net.last_seen)}</td>
-                    `;
+                    tr.innerHTML = `<td><strong>${net.ssid}</strong></td><td>${net.max_signal} dBm</td><td>${net.encryption}</td><td>${net.count}x</td><td>${formatDate(net.last_seen)}</td>`;
                     tbody.appendChild(tr);
                 });
             } catch (e) { console.error("Networks error:", e); }
         }
 
         async function updateCharts() {
-            // Speed Chart
             try {
                 const res = await fetch('/api/chart/speedtest/24');
                 const data = await res.json();
-                
                 chartSpeed.data.labels = data.timestamps.map(formatDate);
                 chartSpeed.data.datasets = [
-                    {
-                        label: 'Download (Mbps)',
-                        data: data.downloads,
-                        borderColor: '#03dac6',
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Upload (Mbps)',
-                        data: data.uploads,
-                        borderColor: '#bb86fc',
-                        tension: 0.3
-                    }
+                    { label: 'Download (Mbps)', data: data.downloads, borderColor: '#03dac6', tension: 0.3 },
+                    { label: 'Upload (Mbps)', data: data.uploads, borderColor: '#bb86fc', tension: 0.3 }
                 ];
                 chartSpeed.update();
             } catch (e) {}
 
-            // Ping Chart
             try {
                 const res = await fetch('/api/chart/ping/24');
                 const data = await res.json();
-
                 chartPing.data.labels = data.timestamps.map(formatDate);
                 chartPing.data.datasets = [
-                    {
-                        label: 'Google (ms)',
-                        data: data.google,
-                        borderColor: '#cf6679',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Cloudflare (ms)',
-                        data: data.cloudflare,
-                        borderColor: '#ffb74d',
-                        tension: 0.1
-                    }
+                    { label: 'Google (ms)', data: data.google, borderColor: '#cf6679', tension: 0.1 },
+                    { label: 'Cloudflare (ms)', data: data.cloudflare, borderColor: '#ffb74d', tension: 0.1 }
                 ];
                 chartPing.update();
             } catch (e) {}
@@ -481,55 +373,37 @@
         async function triggerScan() {
             const btn = document.getElementById('btn-scan');
             const overlay = document.getElementById('loading-overlay');
-            
             if(!confirm("Einen neuen Scan jetzt starten? Das dauert ca. 60 Sekunden.")) return;
-
-            btn.disabled = true;
-            overlay.style.display = 'flex';
-
+            btn.disabled = true; overlay.style.display = 'flex';
             try {
                 const res = await fetch('/api/scan/trigger', {method: 'POST'});
                 const data = await res.json();
-                
                 if(data.status === 'started') {
-                    // Poll status
                     const checkInterval = setInterval(async () => {
                         const sRes = await fetch('/api/scan/status');
                         const sData = await sRes.json();
                         if(!sData.scanning) {
                             clearInterval(checkInterval);
-                            overlay.style.display = 'none';
-                            btn.disabled = false;
+                            overlay.style.display = 'none'; btn.disabled = false;
                             alert("Scan abgeschlossen!");
-                            // Refresh all data
-                            updateStats();
-                            updateNetworks();
-                            updateCharts();
+                            updateStats(); updateNetworks(); updateCharts();
                         }
                     }, 2000);
                 } else {
                     alert("Konnte Scan nicht starten: " + data.message);
-                    overlay.style.display = 'none';
-                    btn.disabled = false;
+                    overlay.style.display = 'none'; btn.disabled = false;
                 }
             } catch (e) {
                 alert("Fehler beim Starten des Scans");
-                overlay.style.display = 'none';
-                btn.disabled = false;
+                overlay.style.display = 'none'; btn.disabled = false;
             }
         }
 
-        // Init
         setInterval(updateLive, 1000);
         setInterval(updateStats, 30000);
         setInterval(updateNetworks, 60000);
         setInterval(updateCharts, 60000);
-
-        updateLive();
-        updateStats();
-        updateNetworks();
-        updateCharts();
-
+        updateLive(); updateStats(); updateNetworks(); updateCharts();
     </script>
 </body>
 </html>
