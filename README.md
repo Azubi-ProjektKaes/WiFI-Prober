@@ -26,7 +26,7 @@ Software: Python 3, pip, git, wireless-tools.
 Repository klonen:
 
 bash
-git clone https://github.com/DEIN-USERNAME/wifi-prober.git
+git clone https://github.com/Azubi-ProjektKaes/WiFI-Prober.git
 cd wifi-prober
 Installation starten:
 Das Installationsskript richtet alle Abhängigkeiten ein und erstellt die systemd-Services.
