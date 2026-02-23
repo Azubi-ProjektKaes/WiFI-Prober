@@ -30,7 +30,6 @@ current_live_data = {
 }
 
 def load_results():
-    """Lade gespeicherte Probe-Ergebnisse"""
     try:
         if Path(RESULTS_FILE).exists():
             with open(RESULTS_FILE, 'r') as f:
@@ -41,15 +40,14 @@ def load_results():
         return {"probe_results": []}
 
 def get_cpu_temp():
-    """Holt CPU Temperatur"""
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             return round(int(f.read()) / 1000, 1)
     except:
         return 0
 
+# NEU: WLAN IP holen
 def get_wlan0_ip():
-    """Holt die IP-Adresse des wlan0 Interfaces"""
     try:
         result = subprocess.run(
             ['ip', '-4', 'addr', 'show', 'wlan0'],
@@ -62,15 +60,14 @@ def get_wlan0_ip():
         print(f"Fehler beim Holen der wlan0 IP: {e}")
     return "Nicht verfügbar"
 
+# NEU: Ausfälle erkennen
 def detect_wifi_outages(results):
-    """Erkennt Ausfälle basierend auf Ping/Speedtest-Fehlern"""
     outages = []
     for i, r in enumerate(results):
         ping_google = r.get("ping", {}).get("google", {})
         ping_cloudflare = r.get("ping", {}).get("cloudflare", {})
         speedtest = r.get("speedtest", {})
         
-        # Ausfall erkennen wenn beide Pings fehlschlagen ODER Speedtest Error
         ping_fail = not ping_google.get("success", False) and not ping_cloudflare.get("success", False)
         speedtest_fail = "error" in speedtest
         
@@ -83,12 +80,9 @@ def detect_wifi_outages(results):
     return outages
 
 def run_single_ping(target):
-    """Führt einzelnen Ping aus"""
     try:
-        # Versuche Ping über wlan0
         cmd = ['ping', '-I', 'wlan0', '-c', '1', '-W', '1', target]
         result = subprocess.run(cmd, capture_output=True, text=True)
-        # Fallback ohne Interface-Bindung falls wlan0 fehlschlägt
         if result.returncode != 0:
             cmd = ['ping', '-c', '1', '-W', '1', target]
             result = subprocess.run(cmd, capture_output=True, text=True)
@@ -102,7 +96,6 @@ def run_single_ping(target):
     return {"avg_ms": 0, "success": False}
 
 def background_worker():
-    """Hintergrund-Thread für Live-Daten"""
     targets = {"google": "8.8.8.8", "cloudflare": "1.1.1.1"}
     print("Live-Worker gestartet (Ping & System Stats)...")
     while True:
@@ -118,23 +111,19 @@ def background_worker():
             print(f"Fehler bei System-Stats: {e}")
         time.sleep(1)
 
-# Starte Background-Worker
 worker = threading.Thread(target=background_worker, daemon=True)
 worker.start()
 
 @app.route('/')
 def dashboard():
-    """Hauptseite Dashboard"""
     return render_template('dashboard.html')
 
 @app.route('/api/ping_multi')
 def api_ping_multi():
-    """Live Ping Daten"""
     return jsonify(current_live_data)
 
 @app.route('/api/stats')
 def api_stats():
-    """Statistik Übersicht"""
     data = load_results()
     results = data.get("probe_results", [])
     if not results:
@@ -161,15 +150,15 @@ def api_stats():
         "last_probe": results[-1]["timestamp"] if results else ""
     })
 
+# NEU: WLAN IP Endpoint
 @app.route('/api/wlan0_ip')
 def api_wlan0_ip():
-    """Gibt die aktuelle wlan0 IP-Adresse zurück"""
     ip = get_wlan0_ip()
     return jsonify({"ip": ip, "interface": "wlan0", "status": "ok" if ip != "Nicht verfügbar" else "error"})
 
+# NEU: Ausfälle Endpoint
 @app.route('/api/outages')
 def api_outages():
-    """Gibt WiFi-Ausfälle der letzten 24h zurück"""
     data = load_results()
     results = data.get("probe_results", [])
     cutoff = datetime.now() - timedelta(hours=24)
@@ -197,7 +186,6 @@ def api_outages():
 
 @app.route('/api/networks')
 def api_networks():
-    """Alle gefundenen WiFi Netzwerke"""
     data = load_results()
     results = data.get("probe_results", [])
     cutoff = datetime.now() - timedelta(hours=24)
@@ -235,7 +223,6 @@ def api_networks():
 
 @app.route('/api/chart/speedtest/<int:hours>')
 def api_chart_speedtest(hours):
-    """Speedtest Chart Daten"""
     data = load_results()
     results = data.get("probe_results", [])
     cutoff = datetime.now() - timedelta(hours=hours)
@@ -253,7 +240,6 @@ def api_chart_speedtest(hours):
 
 @app.route('/api/chart/wifi/<int:hours>')
 def api_chart_wifi(hours):
-    """WiFi Netzwerk Chart Daten"""
     data = load_results()
     results = data.get("probe_results", [])
     cutoff = datetime.now() - timedelta(hours=hours)
@@ -268,7 +254,6 @@ def api_chart_wifi(hours):
 
 @app.route('/api/chart/ping/<int:hours>')
 def api_chart_ping(hours):
-    """Ping Latenz Chart Daten"""
     data = load_results()
     results = data.get("probe_results", [])
     cutoff = datetime.now() - timedelta(hours=hours)
@@ -297,7 +282,6 @@ def api_chart_ping(hours):
 
 @app.route('/api/scan/trigger', methods=['POST'])
 def api_scan_trigger():
-    """Manuellen Scan auslösen"""
     global SCAN_IN_PROGRESS
     if SCAN_IN_PROGRESS:
         return jsonify({"status": "busy", "message": "Scan läuft bereits"}), 429
@@ -317,12 +301,10 @@ def api_scan_trigger():
 
 @app.route('/api/scan/status')
 def api_scan_status():
-    """Scan Status"""
     return jsonify({"scanning": SCAN_IN_PROGRESS})
 
 @app.route('/api/health')
 def api_health():
-    """Health Check"""
     return jsonify({"status": "ok", "message": "System online"})
 
 if __name__ == '__main__':
