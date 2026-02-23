@@ -1,6 +1,7 @@
 [README.md](https://github.com/user-attachments/files/25361485/README.md)
+
 📡 WiFi Probing Station
-Ein leichtgewichtiges, Raspberry Pi-basiertes Monitoring-System zur kontinuierlichen Überwachung von WLAN-Netzwerken, Internet-Geschwindigkeit und Netzwerklatenz. Entwickelt für IT-Systemadministratoren und Netzwerk-Enthusiasten.
+Ein leichtgewichtiges, Raspberry Pi-basiertes Monitoring-System zur kontinuierlichen Überwachung von WLAN-Netzwerken, Internet-Geschwindigkeit und Netzwerklatenz.
 
 🚀 Features
 Live-Dashboard: Modernes Web-Interface (Dark/Light Mode) mit Echtzeit-Daten.
