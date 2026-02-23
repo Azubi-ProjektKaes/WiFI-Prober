@@ -8,7 +8,7 @@ Live-Dashboard: Modernes Web-Interface (Dark/Light Mode) mit Echtzeit-Daten.
 
 Latenz-Monitoring: Kontinuierliche Ping-Messungen zu Google (8.8.8.8) und Cloudflare (1.1.1.1). Optimiert, um Bufferbloat durch Speedtests zu vermeiden.
 
-WLAN-Scanner: Erfasst Umgebungsvariablen wie Signalstärke (dBm), Kanalbelegung und Verschlüsselungstypen.
+WLAN-Scanner: Erfasst Umgebungsvariablen wie Signalstärke (dBm) und Verschlüsselungstypen.
 
 Internet-Speedtest: Periodische Messung von Bandbreite (Down/Up) via speedtest-cli.
 
@@ -85,6 +85,8 @@ Speichern (STRG+O, Enter, STRG+X) und Netzwerk neu laden:
 
 bash
 sudo wpa_cli -i wlan0 reconfigure
+
+
 📂 Projektstruktur
 dashboard_server.py: Flask-Server, der die Web-Oberfläche und API bereitstellt.
 
@@ -96,5 +98,3 @@ templates/dashboard.html: Frontend-Code (HTML/JS/Chart.js).
 
 install.sh: Setup-Skript für automatisiertes Deployment.
 
-📝 Lizenz
-Dieses Projekt ist unter der MIT Lizenz veröffentlicht. Fühle dich frei, es zu forken und anzupassen.
