@@ -18,6 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 RESULTS_FILE = "/home/azubi/wifi_probe_results.json"
+OUTAGE_LOG_FILE = "/home/azubi/wifi_outage_log.json"
 SCAN_IN_PROGRESS = False
 
 current_live_data = {
@@ -41,6 +42,7 @@ last_incident = {
     "severity": None
 }
 
+outage_log = []
 
 def get_ip_address(ifname: str) -> str:
     try:
@@ -53,7 +55,6 @@ def get_ip_address(ifname: str) -> str:
     except OSError:
         return "unknown"
 
-
 def load_results():
     try:
         if Path(RESULTS_FILE).exists():
@@ -64,6 +65,21 @@ def load_results():
         print(f"Fehler beim Laden der Ergebnisse: {e}")
         return {"probe_results": []}
 
+def load_outage_log():
+    global outage_log
+    try:
+        if Path(OUTAGE_LOG_FILE).exists():
+            with open(OUTAGE_LOG_FILE, 'r') as f:
+                outage_log = json.load(f)
+    except:
+        outage_log = []
+
+def save_outage_log():
+    try:
+        with open(OUTAGE_LOG_FILE, 'w') as f:
+            json.dump(outage_log, f)
+    except Exception as e:
+        print(f"Fehler beim Speichern des Outage-Logs: {e}")
 
 def get_cpu_temp():
     try:
@@ -71,7 +87,6 @@ def get_cpu_temp():
             return round(int(f.read()) / 1000, 1)
     except:
         return 0
-
 
 def run_single_ping(target):
     try:
@@ -83,12 +98,10 @@ def run_single_ping(target):
         if result.returncode == 0:
             match = re.search(r'time=([\d.]+)', result.stdout)
             if match:
-                val = float(match.group(1))
-                return {"avg_ms": val, "success": True}
+                return {"avg_ms": float(match.group(1)), "success": True}
     except:
         pass
     return {"avg_ms": 0, "success": False}
-
 
 def register_incident(typ, msg, severity="critical"):
     global last_incident
@@ -101,9 +114,20 @@ def register_incident(typ, msg, severity="critical"):
             "severity": severity
         }
 
-
 def clear_incident():
-    global last_incident
+    global last_incident, outage_log
+    if last_incident["active"]:
+        start_dt = datetime.fromisoformat(last_incident["since"])
+        end_dt = datetime.now()
+        outage_log.append({
+            "start": last_incident["since"],
+            "end": end_dt.isoformat(timespec="seconds"),
+            "duration_s": int((end_dt - start_dt).total_seconds()),
+            "type": last_incident["type"],
+            "message": last_incident["message"]
+        })
+        outage_log = outage_log[-50:]
+        save_outage_log()
     last_incident = {
         "active": False,
         "type": None,
@@ -111,7 +135,6 @@ def clear_incident():
         "message": None,
         "severity": None
     }
-
 
 def background_worker():
     targets = {"google": "8.8.8.8", "cloudflare": "1.1.1.1"}
@@ -137,15 +160,13 @@ def background_worker():
                 clear_incident()
         time.sleep(1)
 
-
+load_outage_log()
 worker = threading.Thread(target=background_worker, daemon=True)
 worker.start()
-
 
 @app.route('/')
 def dashboard():
     return render_template('dashboard.html')
-
 
 @app.route('/api/ping_multi')
 def api_ping_multi():
@@ -160,6 +181,9 @@ def api_ping_multi():
         "incident": last_incident
     })
 
+@app.route('/api/outages')
+def api_outages():
+    return jsonify({"outages": list(reversed(outage_log[-20:]))})
 
 @app.route('/api/stats')
 def api_stats():
@@ -184,7 +208,6 @@ def api_stats():
         "avg_download_speed": round(avg_speed, 2),
         "last_probe": results[-1]["timestamp"]
     })
-
 
 @app.route('/api/networks')
 def api_networks():
@@ -220,7 +243,6 @@ def api_networks():
                     networks[ssid]["max_signal"] = net.get("signal", -100)
     return jsonify({"networks": list(networks.values())})
 
-
 @app.route('/api/chart/speedtest/<int:hours>')
 def api_chart_speedtest(hours):
     data = load_results()
@@ -236,7 +258,6 @@ def api_chart_speedtest(hours):
                 uploads.append(st.get("upload_mbps", 0))
     return jsonify({"timestamps": timestamps, "downloads": downloads, "uploads": uploads})
 
-
 @app.route('/api/chart/wifi/<int:hours>')
 def api_chart_wifi(hours):
     data = load_results()
@@ -248,7 +269,6 @@ def api_chart_wifi(hours):
             timestamps.append(r["timestamp"])
             counts.append(r.get("wifi_scan", {}).get("networks_found", 0))
     return jsonify({"timestamps": timestamps, "network_counts": counts})
-
 
 @app.route('/api/chart/ping/<int:hours>')
 def api_chart_ping(hours):
@@ -278,13 +298,11 @@ def api_chart_ping(hours):
             continue
     return jsonify({"timestamps": timestamps, "google": google_pings, "cloudflare": cloudflare_pings})
 
-
 @app.route('/api/scan/trigger', methods=['POST'])
 def api_scan_trigger():
     global SCAN_IN_PROGRESS
     if SCAN_IN_PROGRESS:
         return jsonify({"status": "busy", "message": "Scan läuft bereits"}), 429
-
     def run_restart():
         global SCAN_IN_PROGRESS
         SCAN_IN_PROGRESS = True
@@ -293,21 +311,17 @@ def api_scan_trigger():
             time.sleep(20)
         finally:
             SCAN_IN_PROGRESS = False
-
     t = threading.Thread(target=run_restart, daemon=True)
     t.start()
     return jsonify({"status": "started", "message": "Scan ausgelöst"})
-
 
 @app.route('/api/scan/status')
 def api_scan_status():
     return jsonify({"scanning": SCAN_IN_PROGRESS})
 
-
 @app.route('/api/health')
 def api_health():
     return jsonify({"status": "ok", "message": "System online"})
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
