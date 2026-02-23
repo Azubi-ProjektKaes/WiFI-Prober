@@ -213,12 +213,14 @@
             <div class="stat-label">CPU Temperatur</div>
         </div>
         
+        <!-- NEU: WLAN IP -->
         <div class="stat-card">
             <h3>🌐 WLAN IP</h3>
             <div id="wlan-ip" class="stat-value">--</div>
             <div class="stat-label">wlan0 Adresse</div>
         </div>
         
+        <!-- NEU: Verfügbarkeit -->
         <div class="stat-card">
             <h3>⚠️ Verfügbarkeit</h3>
             <div id="wifi-availability" class="stat-value">--%</div>
@@ -262,6 +264,7 @@
         </div>
     </div>
     
+    <!-- NEU: Ausfall-Historie -->
     <div class="card">
         <h2>📡 WiFi Ausfall-Historie (24h)</h2>
         <div id="outage-table">
@@ -472,6 +475,7 @@
             }
         }
         
+        // NEU: WLAN IP laden
         async function loadWlanIP() {
             try {
                 const response = await fetch('/api/wlan0_ip');
@@ -483,6 +487,7 @@
             }
         }
         
+        // NEU: Ausfälle laden
         async function loadOutages() {
             try {
                 const response = await fetch('/api/outages');
